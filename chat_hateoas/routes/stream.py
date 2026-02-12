@@ -40,9 +40,9 @@ def _tool_status_marker(tool_id: str, state: str, label: str) -> str:
 def _debug_line_oob(message_id: int, event_type: str, payload: dict[str, Any]) -> str:
     payload_json = escape(json.dumps(payload, sort_keys=True))
     return (
-        "<div class=\"debug-line\" hx-swap-oob=\"beforeend:#debug-events\">"
-        f"<code>[message:{message_id}] {escape(event_type)} {payload_json}</code>"
-        "</div>"
+        "<span class=\"debug-line\" hx-swap-oob=\"beforeend:#debug-events\">"
+        f"[message:{message_id}] {escape(event_type)} {payload_json}\n"
+        "</span>"
     )
 
 
@@ -76,7 +76,6 @@ def stream_response(assistant_message_id: int) -> Response:
     delay_min_ms = int(current_app.config.get("STREAM_DELAY_MIN_MS", 30))
     delay_max_ms = int(current_app.config.get("STREAM_DELAY_MAX_MS", 90))
     tool_call_delay_ms = int(current_app.config.get("TOOL_CALL_DELAY_MS", 700))
-    debug_sse = bool(current_app.config.get("DEBUG_SSE_STREAM", False))
     if delay_min_ms < 0:
         delay_min_ms = 0
     if delay_max_ms < delay_min_ms:
@@ -108,8 +107,7 @@ def stream_response(assistant_message_id: int) -> Response:
                 raw_event_count += 1
                 event_type = str(event.get("type", "unknown"))
                 yield _sse_json(event_type, event)
-                if debug_sse:
-                    yield _sse_event("debug_event", _debug_line_oob(assistant_message_id, event_type, event))
+                yield _sse_event("debug_event", _debug_line_oob(assistant_message_id, event_type, event))
 
                 if event_type == "messageStop":
                     stop_reason = str(event.get("stopReason", stop_reason))

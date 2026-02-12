@@ -13,7 +13,7 @@ This file defines project-specific guidance for coding agents working in this re
 - Package: `chat_hateoas`.
 - Main goal: server-rendered chat UI with minimal client-side JavaScript.
 - Mock LLM: Bedrock-like streaming events with Markdown output and tool/button markers.
-- Debug mode can display a raw SSE event panel beside the thread.
+- Debug mode is toggleable in the UI and displays a raw SSE event panel beside the thread.
 - Conversations support deletion and timestamp display in list/thread views.
 - Messages display per-message timestamps in the thread.
 - Thread autoscroll is sticky: it follows new content only while the user is at/near bottom.
@@ -57,7 +57,7 @@ Use `uv` for all dependency and run workflows.
 - SSE event flow should remain Bedrock-like (`messageStart`, `contentBlockDelta`, etc.).
 - `ui_done` must replace the entire streaming message shell (to prevent reconnect loops).
 - Keep tool-call status updates rendered inline with `ui_delta` so text does not disappear during tool execution.
-- In debug mode (`DEBUG_SSE_STREAM=true`), emit and render `debug_event` SSE lines.
+- Always emit `debug_event` SSE lines; UI toggle controls panel visibility.
 - Keep stream pacing configurable via:
   - `STREAM_DELAY_MIN_MS`
   - `STREAM_DELAY_MAX_MS`

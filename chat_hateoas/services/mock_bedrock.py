@@ -79,8 +79,22 @@ class MockBedrockClient:
         rng = random.Random(self.seed)
 
         response_text, tool_plan = self._build_response_text(rng)
-        chunks = self._chunk_text(response_text, rng)
-        tool_schedule = self._build_tool_schedule(chunks=len(chunks), tool_plan=tool_plan, rng=rng)
+        tool_anchors = self._pick_tool_anchor_positions(
+            text=response_text,
+            tool_count=len(tool_plan),
+        )
+        chunks, chunk_starts = self._chunk_text(
+            text=response_text,
+            rng=rng,
+            forced_breaks=tool_anchors,
+        )
+        tool_schedule = self._build_tool_schedule(
+            tool_plan=tool_plan,
+            tool_anchors=tool_anchors,
+            chunk_starts=chunk_starts,
+            chunk_count=len(chunks),
+            rng=rng,
+        )
 
         yield {"type": "messageStart", "message": {"role": "assistant"}}
         yield {"type": "contentBlockStart", "contentBlockIndex": 0, "start": {"text": ""}}
@@ -206,21 +220,24 @@ class MockBedrockClient:
 
     def _build_tool_schedule(
         self,
-        chunks: int,
         tool_plan: list[dict],
+        tool_anchors: list[int],
+        chunk_starts: list[int],
+        chunk_count: int,
         rng: random.Random,
     ) -> dict[int, list[dict]]:
         schedule: dict[int, list[dict]] = {}
-        if chunks <= 1 or not tool_plan:
+        if chunk_count <= 1 or not tool_plan:
             return schedule
 
+        chunk_start_to_index = {start: idx for idx, start in enumerate(chunk_starts)}
         tool_id_counter = count(1)
-        for idx, tool in enumerate(tool_plan):
-            anchor = max(0, int(((idx + 1) * chunks) / (len(tool_plan) + 1)) - 1)
-            result_slot = min(chunks - 1, anchor + rng.randint(1, 2))
+        for tool, anchor in zip(tool_plan, tool_anchors):
+            anchor_chunk = chunk_start_to_index.get(anchor, 0)
+            result_slot = min(chunk_count - 1, anchor_chunk + rng.randint(1, 2))
             tool_use_id = f"tool-{next(tool_id_counter)}"
 
-            schedule.setdefault(anchor, []).append(
+            schedule.setdefault(anchor_chunk, []).append(
                 {
                     "toolUse": {
                         "toolUseId": tool_use_id,
@@ -241,11 +258,63 @@ class MockBedrockClient:
             )
         return schedule
 
-    def _chunk_text(self, text: str, rng: random.Random) -> list[str]:
+    def _chunk_text(
+        self,
+        text: str,
+        rng: random.Random,
+        forced_breaks: list[int],
+    ) -> tuple[list[str], list[int]]:
         chunks: list[str] = []
+        chunk_starts: list[int] = []
         cursor = 0
+        breaks = sorted({point for point in forced_breaks if 0 < point < len(text)})
+        break_idx = 0
+
         while cursor < len(text):
-            size = rng.randint(20, 72)
-            chunks.append(text[cursor : cursor + size])
-            cursor += size
-        return chunks
+            max_size = rng.randint(20, 72)
+            limit = min(len(text), cursor + max_size)
+
+            while break_idx < len(breaks) and breaks[break_idx] <= cursor:
+                break_idx += 1
+
+            cut = limit
+            if break_idx < len(breaks):
+                next_break = breaks[break_idx]
+                if cursor < next_break <= limit and (next_break - cursor) >= 12:
+                    cut = next_break
+                    break_idx += 1
+
+            chunk_starts.append(cursor)
+            chunks.append(text[cursor:cut])
+            cursor = cut
+
+        return chunks, chunk_starts
+
+    def _pick_tool_anchor_positions(self, text: str, tool_count: int) -> list[int]:
+        if tool_count <= 0:
+            return []
+
+        candidates: list[int] = []
+        cursor = 0
+        in_code = False
+        for line in text.splitlines(keepends=True):
+            stripped = line.strip()
+            if stripped.startswith("```"):
+                in_code = not in_code
+            cursor += len(line)
+            if not in_code and stripped == "":
+                candidates.append(cursor)
+
+        if not candidates:
+            return [len(text)] * tool_count
+
+        anchors: list[int] = []
+        used: set[int] = set()
+        for index in range(tool_count):
+            target = int(((index + 1) / (tool_count + 1)) * len(text))
+            ordered = sorted(candidates, key=lambda pos: abs(pos - target))
+            chosen = next((pos for pos in ordered if pos not in used), ordered[0])
+            anchors.append(chosen)
+            used.add(chosen)
+
+        return sorted(anchors)

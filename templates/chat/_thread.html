@@ -2,12 +2,18 @@
   {% if conversation %}
   <header class="thread-head">
     <h2><span class="label-with-icon">{% include "chat/_icons/message.svg" %}{{ conversation.title }}</span></h2>
-    <time class="thread-time" datetime="{{ conversation.updated_at }}">
-      <span class="label-with-icon">{% include "chat/_icons/clock.svg" %}Updated {{ conversation.updated_at | fmt_ts }}</span>
-    </time>
+    <div class="thread-head-meta">
+      <time class="thread-time" datetime="{{ conversation.updated_at }}">
+        <span class="label-with-icon">{% include "chat/_icons/clock.svg" %}Updated {{ conversation.updated_at | fmt_ts }}</span>
+      </time>
+      <label class="debug-toggle">
+        <input type="checkbox" x-model="debugPanelEnabled" @change="persistDebugPanel()">
+        <span>Debug SSE</span>
+      </label>
+    </div>
   </header>
 
-  <div class="thread-body {% if config.DEBUG_SSE_STREAM %}thread-body--debug{% endif %}">
+  <div class="thread-body" :class="{ 'thread-body--debug': debugPanelEnabled }">
     <div class="thread-main">
       <div id="messages" class="messages" x-ref="messages">
         {% for message in messages %}
@@ -38,12 +44,10 @@
       </form>
     </div>
 
-    {% if config.DEBUG_SSE_STREAM %}
-    <aside class="debug-stream">
+    <aside class="debug-stream" x-show="debugPanelEnabled" x-cloak>
       <h3 class="debug-title"><span class="label-with-icon">{% include "chat/_icons/wrench.svg" %}Raw SSE Stream</span></h3>
       <div id="debug-events" class="debug-events"></div>
     </aside>
-    {% endif %}
   </div>
   {% else %}
   <div class="empty-state">

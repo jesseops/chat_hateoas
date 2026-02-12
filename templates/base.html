@@ -17,10 +17,23 @@
         Alpine.data("chatThread", () => ({
           pending: false,
           shouldStickToBottom: true,
+          debugPanelEnabled: false,
           messageObserver: null,
           init() {
             const threshold = 120;
             const getList = () => this.$refs.messages;
+            const debugDefault = {{ "true" if config.DEBUG_SSE_STREAM else "false" }};
+
+            this.persistDebugPanel = () => {
+              window.localStorage.setItem("chat_debug_sse", this.debugPanelEnabled ? "1" : "0");
+            };
+
+            const storedDebug = window.localStorage.getItem("chat_debug_sse");
+            if (storedDebug === "1" || storedDebug === "0") {
+              this.debugPanelEnabled = storedDebug === "1";
+            } else {
+              this.debugPanelEnabled = debugDefault;
+            }
 
             const isNearBottom = () => {
               const list = getList();
