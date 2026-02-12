@@ -1,4 +1,8 @@
-<article id="message-{{ message.id }}" class="message message--{{ message.role }} {% if message.status == 'streaming' %}is-streaming{% endif %}">
+<article
+  id="message-{{ message.id }}"
+  class="message message--{{ message.role }} {% if message.status == 'streaming' %}is-streaming{% endif %}"
+  {% if oob %}hx-swap-oob="outerHTML"{% endif %}
+>
   <div class="message-meta">{{ "You" if message.role == "user" else "Assistant" }}</div>
   <div class="message-bubble">{{ message.rendered_html | safe }}</div>
 

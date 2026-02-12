@@ -29,6 +29,7 @@ def test_stream_emits_events_and_persists_metadata(client, app) -> None:
     assert "event: contentBlockDelta" in body
     assert "event: ui_delta" in body
     assert "event: ui_done" in body
+    assert 'hx-swap-oob="outerHTML"' in body
 
     with app.app_context():
         updated_message = db.get_message(assistant_id)

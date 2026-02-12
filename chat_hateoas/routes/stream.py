@@ -127,11 +127,11 @@ def stream_response(assistant_message_id: int) -> Response:
                 raw_event_count=raw_event_count,
             )
 
-            done_html = render_stream_done(
-                body_html=final_html,
-                message_id=assistant_message_id,
-                vote=db.get_feedback(assistant_message_id),
-            )
+            completed_message = db.get_message(assistant_message_id)
+            if completed_message is None:
+                abort(404)
+
+            done_html = render_stream_done(completed_message)
             yield _sse_event("ui_done", done_html)
         except Exception:
             db.update_message(
