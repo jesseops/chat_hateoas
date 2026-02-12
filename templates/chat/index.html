@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="app-shell">
+  <header class="app-header">
+    <h1>Chat HATEOAS</h1>
+    <p>Flask + HTMX + Alpine + SSE mock Bedrock stream</p>
+  </header>
+
+  <div class="chat-layout">
+    {% include "chat/_conversation_list.html" %}
+
+    {% include "chat/_thread.html" %}
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,37 @@
+<section id="thread-panel" class="thread-panel" x-data="chatThread()" x-init="init()">
+  {% if conversation %}
+  <header class="thread-head">
+    <h2>{{ conversation.title }}</h2>
+  </header>
+
+  <div id="messages" class="messages" x-ref="messages">
+    {% for message in messages %}
+      {% include "chat/_message.html" %}
+    {% endfor %}
+  </div>
+
+  <form
+    id="composer-form"
+    class="composer"
+    hx-post="{{ url_for('web.post_message', conversation_id=conversation.id) }}"
+    hx-target="#messages"
+    hx-swap="beforeend"
+  >
+    <textarea
+      id="composer-input"
+      name="message"
+      rows="3"
+      required
+      placeholder="Ask anything..."
+      :disabled="pending"
+    ></textarea>
+    <div class="composer-actions">
+      <button type="submit" :disabled="pending">Send</button>
+    </div>
+  </form>
+  {% else %}
+  <div class="empty-state">
+    <p>No conversation selected.</p>
+  </div>
+  {% endif %}
+</section>

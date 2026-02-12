@@ -1,0 +1,10 @@
+<article id="message-{{ message.id }}" class="message message--{{ message.role }} {% if message.status == 'streaming' %}is-streaming{% endif %}">
+  <div class="message-meta">{{ "You" if message.role == "user" else "Assistant" }}</div>
+  <div class="message-bubble">{{ message.rendered_html | safe }}</div>
+
+  {% if message.role == "assistant" and message.status == "complete" %}
+    {% set message_id = message.id %}
+    {% set vote = message.feedback_vote %}
+    {% include "chat/_feedback.html" %}
+  {% endif %}
+</article>

@@ -1,0 +1,19 @@
+[project]
+name = "chat-hateoas"
+version = "0.1.0"
+description = "Flask + HTMX + Alpine chat scaffold with mock Bedrock-like SSE"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+  "flask>=3.0.0",
+  "python-dotenv>=1.0.1",
+]
+
+[dependency-groups]
+dev = [
+  "pytest>=8.3.0",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]

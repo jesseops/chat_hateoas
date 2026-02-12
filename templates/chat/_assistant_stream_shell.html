@@ -1,0 +1,12 @@
+<article id="message-{{ message.id }}" class="message message--assistant is-streaming">
+  <div class="message-meta">Assistant</div>
+  <div
+    id="stream-target-{{ message.id }}"
+    class="message-bubble stream-target"
+    hx-ext="sse"
+    sse-connect="{{ url_for('stream.stream_response', assistant_message_id=message.id) }}"
+    sse-swap="ui_delta,ui_done"
+  >
+    <span class="thinking">Thinking...</span>
+  </div>
+</article>

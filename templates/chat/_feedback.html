@@ -1,0 +1,23 @@
+<div id="feedback-{{ message_id }}" class="feedback">
+  <span>Helpful?</span>
+  <button
+    type="button"
+    class="vote {% if vote == 'up' %}active{% endif %}"
+    hx-post="{{ url_for('web.message_feedback', message_id=message_id) }}"
+    hx-vals='{"vote":"up"}'
+    hx-target="#feedback-{{ message_id }}"
+    hx-swap="outerHTML"
+  >
+    Upvote
+  </button>
+  <button
+    type="button"
+    class="vote {% if vote == 'down' %}active{% endif %}"
+    hx-post="{{ url_for('web.message_feedback', message_id=message_id) }}"
+    hx-vals='{"vote":"down"}'
+    hx-target="#feedback-{{ message_id }}"
+    hx-swap="outerHTML"
+  >
+    Downvote
+  </button>
+</div>
