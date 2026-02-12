@@ -92,6 +92,10 @@ def get_conversation(conversation_id: int) -> sqlite3.Row | None:
     )
 
 
+def delete_conversation(conversation_id: int) -> None:
+    execute("DELETE FROM conversations WHERE id = ?", (conversation_id,))
+
+
 def create_message(
     conversation_id: int,
     role: str,

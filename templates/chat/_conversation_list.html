@@ -14,16 +14,32 @@
 
   <nav class="conversation-items">
     {% for item in conversations %}
-    <a
-      class="conversation-link {% if item.id == active_id %}active{% endif %}"
-      href="{{ url_for('web.get_conversation', conversation_id=item.id) }}"
-      hx-get="{{ url_for('web.get_conversation', conversation_id=item.id) }}"
-      hx-target="#thread-panel"
-      hx-swap="outerHTML transition:true"
-      hx-push-url="true"
-    >
-      {{ item.title }}
-    </a>
+    <div class="conversation-row {% if item.id == active_id %}active{% endif %}">
+      <a
+        class="conversation-link"
+        href="{{ url_for('web.get_conversation', conversation_id=item.id) }}"
+        hx-get="{{ url_for('web.get_conversation', conversation_id=item.id) }}"
+        hx-target="#thread-panel"
+        hx-swap="outerHTML transition:true"
+        hx-push-url="true"
+      >
+        <span class="conversation-title">{{ item.title }}</span>
+        <time class="conversation-time" datetime="{{ item.updated_at }}">
+          {{ item.updated_at | fmt_ts }}
+        </time>
+      </a>
+      <button
+        class="delete-conversation"
+        type="button"
+        hx-post="{{ url_for('web.delete_conversation', conversation_id=item.id) }}"
+        hx-target="#thread-panel"
+        hx-swap="outerHTML transition:true"
+        hx-confirm="Delete this conversation?"
+        title="Delete conversation"
+      >
+        Delete
+      </button>
+    </div>
     {% endfor %}
   </nav>
 </aside>

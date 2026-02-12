@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import datetime
 from pathlib import Path
 
 from flask import Flask
@@ -31,6 +32,14 @@ def create_app(test_config: dict | None = None) -> Flask:
     db.init_app(app)
     app.register_blueprint(web_bp)
     app.register_blueprint(stream_bp)
+
+    @app.template_filter("fmt_ts")
+    def fmt_ts(value: str) -> str:
+        try:
+            parsed = datetime.fromisoformat(value)
+            return parsed.strftime("%Y-%m-%d %H:%M UTC")
+        except Exception:
+            return value
 
     with app.app_context():
         db.init_db()

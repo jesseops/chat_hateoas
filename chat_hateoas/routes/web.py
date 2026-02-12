@@ -88,6 +88,25 @@ def create_conversation() -> Any:
     return redirect(url_for("web.index", conversation_id=conversation_id))
 
 
+@bp.post("/conversations/<int:conversation_id>/delete")
+def delete_conversation(conversation_id: int) -> Any:
+    conversation = db.get_conversation(conversation_id)
+    if conversation is None:
+        abort(404)
+
+    db.delete_conversation(conversation_id)
+    if db.conversation_count() == 0:
+        db.create_conversation("Conversation 1")
+
+    conversations = db.list_conversations()
+    next_active_id = int(conversations[0]["id"])
+
+    if _is_htmx():
+        return _render_thread_and_sidebar(next_active_id)
+
+    return redirect(url_for("web.index", conversation_id=next_active_id))
+
+
 @bp.get("/conversations/<int:conversation_id>")
 def get_conversation(conversation_id: int) -> Any:
     conversation = db.get_conversation(conversation_id)

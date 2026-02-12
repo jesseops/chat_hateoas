@@ -81,21 +81,57 @@ body {
   gap: 0.4rem;
 }
 
+.conversation-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.4rem;
+  align-items: start;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  padding: 0.15rem;
+}
+
+.conversation-row.active {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
 .conversation-link {
   text-decoration: none;
   color: var(--text);
-  padding: 0.5rem 0.6rem;
+  padding: 0.45rem 0.55rem;
   border-radius: 8px;
-  border: 1px solid transparent;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
 }
 
 .conversation-link:hover {
   background: #faf7ef;
 }
 
-.conversation-link.active {
-  border-color: var(--accent);
-  background: var(--accent-soft);
+.conversation-title {
+  font-size: 0.92rem;
+}
+
+.conversation-time {
+  color: var(--muted);
+  font-size: 0.72rem;
+}
+
+.delete-conversation {
+  border: 1px solid var(--border);
+  background: white;
+  color: var(--muted);
+  border-radius: 8px;
+  padding: 0.25rem 0.45rem;
+  cursor: pointer;
+  font-size: 0.75rem;
+}
+
+.delete-conversation:hover {
+  border-color: #c26d6d;
+  color: #8b2f2f;
 }
 
 .thread-panel {
@@ -106,7 +142,15 @@ body {
 }
 
 .thread-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
   margin-bottom: 0.75rem;
+}
+
+.thread-time {
+  color: var(--muted);
+  font-size: 0.75rem;
 }
 
 .messages {
@@ -123,9 +167,16 @@ body {
 }
 
 .message-meta {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
   font-size: 0.75rem;
   color: var(--muted);
   margin-bottom: 0.25rem;
+}
+
+.message-time {
+  font-size: 0.72rem;
 }
 
 .message-bubble {

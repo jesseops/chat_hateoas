@@ -2,6 +2,9 @@
   {% if conversation %}
   <header class="thread-head">
     <h2>{{ conversation.title }}</h2>
+    <time class="thread-time" datetime="{{ conversation.updated_at }}">
+      Updated {{ conversation.updated_at | fmt_ts }}
+    </time>
   </header>
 
   <div id="messages" class="messages" x-ref="messages">

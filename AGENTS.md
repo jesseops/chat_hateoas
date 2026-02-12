@@ -13,6 +13,8 @@ This file defines project-specific guidance for coding agents working in this re
 - Package: `chat_hateoas`.
 - Main goal: server-rendered chat UI with minimal client-side JavaScript.
 - Mock LLM: Bedrock-like streaming events with Markdown output and tool/button markers.
+- Conversations support deletion and timestamp display in list/thread views.
+- Messages display per-message timestamps in the thread.
 
 ## Repository Layout
 
@@ -58,6 +60,7 @@ Use `uv` for all dependency and run workflows.
 
 - SQLite file defaults to `instance/chat.db`.
 - Feedback model is one mutable vote per assistant message (`up`/`down`).
+- Conversation deletion is performed via `POST /conversations/<id>/delete`.
 - If schema changes are required, update both:
   - `chat_hateoas/schema.sql`
   - data access functions in `chat_hateoas/db.py`
