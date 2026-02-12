@@ -7,33 +7,44 @@
     </time>
   </header>
 
-  <div id="messages" class="messages" x-ref="messages">
-    {% for message in messages %}
-      {% include "chat/_message.html" %}
-    {% endfor %}
-  </div>
+  <div class="thread-body {% if config.DEBUG_SSE_STREAM %}thread-body--debug{% endif %}">
+    <div class="thread-main">
+      <div id="messages" class="messages" x-ref="messages">
+        {% for message in messages %}
+          {% include "chat/_message.html" %}
+        {% endfor %}
+      </div>
 
-  <form
-    id="composer-form"
-    class="composer"
-    hx-post="{{ url_for('web.post_message', conversation_id=conversation.id) }}"
-    hx-target="#messages"
-    hx-swap="beforeend transition:true"
-  >
-    <textarea
-      id="composer-input"
-      name="message"
-      rows="3"
-      required
-      placeholder="Ask anything..."
-      :disabled="pending"
-    ></textarea>
-    <div class="composer-actions">
-      <button type="submit" :disabled="pending">
-        <span class="label-with-icon">{% include "chat/_icons/send.svg" %}Send</span>
-      </button>
+      <form
+        id="composer-form"
+        class="composer"
+        hx-post="{{ url_for('web.post_message', conversation_id=conversation.id) }}"
+        hx-target="#messages"
+        hx-swap="beforeend transition:true"
+      >
+        <textarea
+          id="composer-input"
+          name="message"
+          rows="3"
+          required
+          placeholder="Ask anything..."
+          :disabled="pending"
+        ></textarea>
+        <div class="composer-actions">
+          <button type="submit" :disabled="pending">
+            <span class="label-with-icon">{% include "chat/_icons/send.svg" %}Send</span>
+          </button>
+        </div>
+      </form>
     </div>
-  </form>
+
+    {% if config.DEBUG_SSE_STREAM %}
+    <aside class="debug-stream">
+      <h3 class="debug-title"><span class="label-with-icon">{% include "chat/_icons/wrench.svg" %}Raw SSE Stream</span></h3>
+      <div id="debug-events" class="debug-events"></div>
+    </aside>
+    {% endif %}
+  </div>
   {% else %}
   <div class="empty-state">
     <p>No conversation selected.</p>

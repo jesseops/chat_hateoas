@@ -29,6 +29,8 @@ def test_stream_emits_events_and_persists_metadata(client, app) -> None:
     assert "event: contentBlockDelta" in body
     assert "event: ui_delta" in body
     assert "event: ui_done" in body
+    assert "Running " in body
+    assert "Tool completed:" in body
     assert 'hx-swap-oob="outerHTML"' in body
 
     with app.app_context():
@@ -42,3 +44,22 @@ def test_stream_emits_events_and_persists_metadata(client, app) -> None:
         assert updated_message["status"] == "complete"
         assert metadata is not None
         assert metadata["provider"] == "mock-bedrock"
+
+
+def test_stream_for_completed_message_returns_done_only(client, app) -> None:
+    with app.app_context():
+        conversation_id = db.create_conversation("Done Stream Test")
+        assistant_id = db.create_message(
+            conversation_id=conversation_id,
+            role="assistant",
+            raw_text="already done",
+            rendered_html="<p>done</p>",
+            status="complete",
+        )
+
+    response = client.get(f"/responses/{assistant_id}/stream", buffered=True)
+    body = response.get_data(as_text=True)
+
+    assert response.status_code == 200
+    assert "event: ui_done" in body
+    assert "event: contentBlockDelta" not in body

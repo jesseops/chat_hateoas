@@ -18,6 +18,8 @@ def app(tmp_path):
             "TEMPERATURE": 0.4,
             "STREAM_DELAY_MIN_MS": 0,
             "STREAM_DELAY_MAX_MS": 0,
+            "TOOL_CALL_DELAY_MS": 0,
+            "DEBUG_SSE_STREAM": False,
         }
     )
     return app

@@ -7,6 +7,7 @@ from html import escape
 from urllib.parse import urlparse
 
 BUTTON_PATTERN = re.compile(r"\[\[button:([^|\]]+)\|([A-Za-z0-9_./:-]+)\]\]")
+TOKEN_PATTERN = re.compile(r"\[\[(button:[^]]+|tool_status:[^]]+)\]\]")
 TOOL_KEYS = {"toolUse", "toolResult"}
 
 
@@ -20,6 +21,13 @@ class Segment:
 class ButtonSegment:
     label: str
     action_id: str
+
+
+@dataclass(slots=True)
+class ToolStatusSegment:
+    marker_id: str
+    state: str
+    label: str
 
 
 INLINE_CODE_PATTERN = re.compile(r"`([^`\n]+)`")
@@ -202,10 +210,42 @@ def _parse_text_tool_lines(text: str) -> list[Segment]:
     return parsed
 
 
-def parse_segments(raw_text: str) -> list[Segment | ButtonSegment]:
-    segments: list[Segment | ButtonSegment] = []
+def _parse_control_token(token: str) -> ButtonSegment | ToolStatusSegment | None:
+    if token.startswith("button:"):
+        body = token.removeprefix("button:")
+        if "|" not in body:
+            return None
+        label, action_id = body.split("|", 1)
+        label = label.strip()
+        action_id = action_id.strip()
+        if not label or not action_id:
+            return None
+        if not re.fullmatch(r"[A-Za-z0-9_./:-]+", action_id):
+            return None
+        return ButtonSegment(label=label, action_id=action_id)
+
+    if token.startswith("tool_status:"):
+        body = token.removeprefix("tool_status:")
+        parts = body.split("|", 2)
+        if len(parts) != 3:
+            return None
+        marker_id, state, label = parts
+        marker_id = marker_id.strip()
+        state = state.strip()
+        label = label.strip()
+        if not marker_id or state not in {"running", "done"} or not label:
+            return None
+        if not re.fullmatch(r"[A-Za-z0-9_-]+", marker_id):
+            return None
+        return ToolStatusSegment(marker_id=marker_id, state=state, label=label)
+
+    return None
+
+
+def parse_segments(raw_text: str) -> list[Segment | ButtonSegment | ToolStatusSegment]:
+    segments: list[Segment | ButtonSegment | ToolStatusSegment] = []
     cursor = 0
-    for match in BUTTON_PATTERN.finditer(raw_text):
+    for match in TOKEN_PATTERN.finditer(raw_text):
         before = raw_text[cursor : match.start()]
         before_segments = _parse_text_tool_lines(before)
         for item in before_segments:
@@ -214,10 +254,9 @@ def parse_segments(raw_text: str) -> list[Segment | ButtonSegment]:
             else:
                 segments.append(item)
 
-        label = match.group(1).strip()
-        action_id = match.group(2).strip()
-        if label and action_id:
-            segments.append(ButtonSegment(label=label, action_id=action_id))
+        parsed_token = _parse_control_token(match.group(1))
+        if parsed_token is not None:
+            segments.append(parsed_token)
         else:
             _append_text(segments, match.group(0))
 
@@ -233,18 +272,33 @@ def parse_segments(raw_text: str) -> list[Segment | ButtonSegment]:
     return segments
 
 
-def render_assistant_html(raw_text: str, message_id: int) -> str:
+def render_assistant_html(
+    raw_text: str,
+    message_id: int,
+    action_url: str = "/actions/fake",
+) -> str:
     output: list[str] = []
     saw_action = False
 
     for segment in parse_segments(raw_text):
+        if isinstance(segment, ToolStatusSegment):
+            output.append(
+                (
+                    f"<div class=\"tool-status tool-status--{escape(segment.state)}\" "
+                    f"data-tool-id=\"{escape(segment.marker_id, quote=True)}\">"
+                    f"{escape(segment.label)}"
+                    "</div>"
+                )
+            )
+            continue
+
         if isinstance(segment, ButtonSegment):
             saw_action = True
             hx_vals = json.dumps({"action_id": segment.action_id, "message_id": message_id})
             output.append(
                 (
                     "<button class=\"fake-action\" type=\"button\" "
-                    "hx-post=\"/actions/fake\" "
+                    f"hx-post=\"{escape(action_url, quote=True)}\" "
                     f"hx-vals='{escape(hx_vals)}' "
                     f"hx-target=\"#action-result-{message_id}\" "
                     "hx-swap=\"innerHTML transition:true\">"

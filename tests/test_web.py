@@ -70,3 +70,13 @@ def test_delete_conversation_htmx_reloads_sidebar_and_thread(client, app) -> Non
         kept = db.get_conversation(keep_id)
         assert deleted is None
         assert kept is not None
+
+
+def test_debug_sse_panel_renders_when_enabled(client, app) -> None:
+    app.config["DEBUG_SSE_STREAM"] = True
+    response = client.get("/")
+    body = response.get_data(as_text=True)
+
+    assert response.status_code == 200
+    assert "Raw SSE Stream" in body
+    assert "id=\"debug-events\"" in body

@@ -17,10 +17,10 @@
         Alpine.data("chatThread", () => ({
           pending: false,
           shouldStickToBottom: true,
+          messageObserver: null,
           init() {
             const threshold = 120;
             const getList = () => this.$refs.messages;
-            let messageObserver = null;
 
             const isNearBottom = () => {
               const list = getList();
@@ -50,35 +50,25 @@
               const list = getList();
               if (!list) return;
 
-              if (messageObserver) {
-                messageObserver.disconnect();
+              if (this.messageObserver) {
+                this.messageObserver.disconnect();
               }
 
-              messageObserver = new MutationObserver(() => {
+              this.messageObserver = new MutationObserver(() => {
                 if (this.shouldStickToBottom) {
                   list.dataset.forceScroll = "1";
                   this.$nextTick(scrollBottom);
                 }
               });
 
-              messageObserver.observe(list, {
+              this.messageObserver.observe(list, {
                 childList: true,
                 subtree: true,
                 characterData: true,
               });
             };
 
-            this.$nextTick(() => {
-              const list = getList();
-              if (list) {
-                list.dataset.forceScroll = "1";
-              }
-              bindScrollTracking();
-              bindMutationObserver();
-              scrollBottom();
-            });
-
-            document.body.addEventListener("htmx:afterSwap", (event) => {
+            this.handleAfterSwap = (event) => {
               const target = event.detail && event.detail.target;
               if (!target) return;
 
@@ -91,9 +81,9 @@
                 bindMutationObserver();
                 this.$nextTick(scrollBottom);
               }
-            });
+            };
 
-            document.body.addEventListener("htmx:sseMessage", (event) => {
+            this.handleSSEMessage = (event) => {
               const elt = event.detail && event.detail.elt;
               if (!elt) return;
               if (!String(elt.id || "").startsWith("stream-target-")) return;
@@ -103,22 +93,57 @@
                 list.dataset.forceScroll = "1";
                 this.$nextTick(scrollBottom);
               }
-            });
+            };
 
-            document.body.addEventListener("htmx:beforeRequest", (event) => {
+            this.handleBeforeRequest = (event) => {
               if (event.target && event.target.id === "composer-form") {
                 this.pending = true;
                 this.shouldStickToBottom = true;
               }
-            });
+            };
 
-            document.body.addEventListener("htmx:afterRequest", (event) => {
+            this.handleAfterRequest = (event) => {
               if (event.target && event.target.id === "composer-form") {
                 this.pending = false;
                 const input = document.getElementById("composer-input");
                 if (input) input.value = "";
               }
+            };
+
+            this.$nextTick(() => {
+              const list = getList();
+              if (list) {
+                list.dataset.forceScroll = "1";
+              }
+              bindScrollTracking();
+              bindMutationObserver();
+              scrollBottom();
             });
+
+            window.__chatThreadActive = this;
+            if (!window.__chatThreadHandlersBound) {
+              window.__chatThreadHandlersBound = true;
+
+              document.body.addEventListener("htmx:afterSwap", (event) => {
+                const active = window.__chatThreadActive;
+                if (active && active.handleAfterSwap) active.handleAfterSwap(event);
+              });
+
+              document.body.addEventListener("htmx:sseMessage", (event) => {
+                const active = window.__chatThreadActive;
+                if (active && active.handleSSEMessage) active.handleSSEMessage(event);
+              });
+
+              document.body.addEventListener("htmx:beforeRequest", (event) => {
+                const active = window.__chatThreadActive;
+                if (active && active.handleBeforeRequest) active.handleBeforeRequest(event);
+              });
+
+              document.body.addEventListener("htmx:afterRequest", (event) => {
+                const active = window.__chatThreadActive;
+                if (active && active.handleAfterRequest) active.handleAfterRequest(event);
+              });
+            }
           },
         }));
       });

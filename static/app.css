@@ -170,6 +170,26 @@ body {
   height: 100%;
 }
 
+.thread-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  min-height: 0;
+  height: 100%;
+}
+
+.thread-body--debug {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 0.8rem;
+}
+
+.thread-main {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
 .thread-head {
   display: flex;
   align-items: baseline;
@@ -252,6 +272,7 @@ body {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+  flex-shrink: 0;
 }
 
 .composer textarea {
@@ -352,6 +373,69 @@ body {
   gap: 0.4rem;
 }
 
+.tool-trace {
+  margin-top: 0.55rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.tool-status {
+  font-size: 0.78rem;
+  color: var(--muted);
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+  padding: 0.3rem 0.45rem;
+  background: #fff;
+}
+
+.tool-status--running {
+  color: #8b5f0c;
+  border-color: #c9a35d;
+  background: #fff7e6;
+}
+
+.tool-status--done {
+  color: var(--accent);
+  border-color: #8cc6b4;
+  background: #edf9f5;
+}
+
+.debug-stream {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #fcfaf4;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.debug-title {
+  margin: 0;
+  padding: 0.6rem 0.65rem;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.85rem;
+  color: #4d4842;
+}
+
+.debug-events {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 0.5rem 0.6rem;
+  font-size: 0.74rem;
+}
+
+.debug-line {
+  margin-bottom: 0.35rem;
+  line-height: 1.35;
+}
+
+.debug-line code {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
 .spinner-dot {
   width: 0.5rem;
   height: 0.5rem;
@@ -396,5 +480,13 @@ body {
     align-items: flex-start;
     flex-direction: column;
     gap: 0.25rem;
+  }
+
+  .thread-body--debug {
+    grid-template-columns: 1fr;
+  }
+
+  .debug-stream {
+    max-height: 220px;
   }
 }

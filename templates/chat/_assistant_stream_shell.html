@@ -10,7 +10,7 @@
     class="message-bubble stream-target"
     hx-ext="sse"
     sse-connect="{{ url_for('stream.stream_response', assistant_message_id=message.id) }}"
-    sse-swap="ui_delta,ui_done"
+    sse-swap="ui_delta,ui_done{% if config.DEBUG_SSE_STREAM %},debug_event{% endif %}"
   >
     <span class="thinking"><span class="spinner-dot"></span>Thinking...</span>
   </div>
