@@ -10,3 +10,5 @@ class Config:
     MOCK_SEED = int(os.environ.get("MOCK_SEED", "13"))
     MAX_TOKENS = int(os.environ.get("MAX_TOKENS", "1024"))
     TEMPERATURE = float(os.environ.get("TEMPERATURE", "0.7"))
+    STREAM_DELAY_MIN_MS = int(os.environ.get("STREAM_DELAY_MIN_MS", "30"))
+    STREAM_DELAY_MAX_MS = int(os.environ.get("STREAM_DELAY_MAX_MS", "90"))

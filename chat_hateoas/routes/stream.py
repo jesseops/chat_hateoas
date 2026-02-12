@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import random
 import time
 from typing import Any, Iterator
 
@@ -42,8 +43,15 @@ def stream_response(assistant_message_id: int) -> Response:
     max_tokens = int(current_app.config["MAX_TOKENS"])
     temperature = float(current_app.config["TEMPERATURE"])
     seed = int(current_app.config["MOCK_SEED"]) + assistant_message_id
+    delay_min_ms = int(current_app.config.get("STREAM_DELAY_MIN_MS", 30))
+    delay_max_ms = int(current_app.config.get("STREAM_DELAY_MAX_MS", 90))
+    if delay_min_ms < 0:
+        delay_min_ms = 0
+    if delay_max_ms < delay_min_ms:
+        delay_max_ms = delay_min_ms
 
     client = MockBedrockClient(seed=seed)
+    delay_rng = random.Random(seed + 1000)
 
     @stream_with_context
     def generate() -> Iterator[str]:
@@ -85,6 +93,14 @@ def stream_response(assistant_message_id: int) -> Response:
                             message_id=assistant_message_id,
                         )
                         yield _sse_event("ui_delta", render_stream_delta(rendered))
+                        if delay_max_ms > 0:
+                            sleep_ms = (
+                                delay_rng.randint(delay_min_ms, delay_max_ms)
+                                if delay_max_ms > delay_min_ms
+                                else delay_max_ms
+                            )
+                            if sleep_ms > 0:
+                                time.sleep(sleep_ms / 1000.0)
 
                     if isinstance(delta, dict) and any(key in delta for key in ("toolUse", "toolResult")):
                         tool_events.append(delta)

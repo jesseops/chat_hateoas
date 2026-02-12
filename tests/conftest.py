@@ -16,6 +16,8 @@ def app(tmp_path):
             "MOCK_SEED": 7,
             "MAX_TOKENS": 512,
             "TEMPERATURE": 0.4,
+            "STREAM_DELAY_MIN_MS": 0,
+            "STREAM_DELAY_MAX_MS": 0,
         }
     )
     return app
