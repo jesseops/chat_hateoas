@@ -4,6 +4,7 @@ import json
 import re
 from dataclasses import dataclass
 from html import escape
+from urllib.parse import urlparse
 
 BUTTON_PATTERN = re.compile(r"\[\[button:([^|\]]+)\|([A-Za-z0-9_./:-]+)\]\]")
 TOOL_KEYS = {"toolUse", "toolResult"}
@@ -19,6 +20,152 @@ class Segment:
 class ButtonSegment:
     label: str
     action_id: str
+
+
+INLINE_CODE_PATTERN = re.compile(r"`([^`\n]+)`")
+LINK_PATTERN = re.compile(r"\[([^\]]+)\]\((https?://[^\s)]+)\)")
+BOLD_PATTERN = re.compile(r"\*\*(.+?)\*\*")
+ITALIC_PATTERN = re.compile(r"(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)")
+HEADING_PATTERN = re.compile(r"^(#{1,6})\s+(.*)$")
+LIST_PATTERN = re.compile(r"^\s*[-*]\s+(.*)$")
+
+
+def _tokenize_pattern(
+    text: str,
+    pattern: re.Pattern[str],
+    render_match,
+    stash,
+) -> str:
+    def _replace(match: re.Match[str]) -> str:
+        return stash(render_match(match))
+
+    return pattern.sub(_replace, text)
+
+
+def _is_safe_http_url(candidate: str) -> bool:
+    parsed = urlparse(candidate)
+    return parsed.scheme in {"http", "https"} and bool(parsed.netloc)
+
+
+def _render_inline_markdown(text: str) -> str:
+    tokens: list[str] = []
+
+    def stash(html: str) -> str:
+        token = f"@@MDTOK{len(tokens)}@@"
+        tokens.append(html)
+        return token
+
+    transformed = text
+    transformed = _tokenize_pattern(
+        transformed,
+        INLINE_CODE_PATTERN,
+        lambda m: f"<code>{escape(m.group(1))}</code>",
+        stash,
+    )
+    transformed = _tokenize_pattern(
+        transformed,
+        LINK_PATTERN,
+        lambda m: (
+            f"<a href=\"{escape(m.group(2), quote=True)}\" target=\"_blank\" rel=\"noopener noreferrer\">"
+            f"{escape(m.group(1))}</a>"
+            if _is_safe_http_url(m.group(2))
+            else escape(m.group(0))
+        ),
+        stash,
+    )
+    transformed = _tokenize_pattern(
+        transformed,
+        BOLD_PATTERN,
+        lambda m: f"<strong>{escape(m.group(1))}</strong>",
+        stash,
+    )
+    transformed = _tokenize_pattern(
+        transformed,
+        ITALIC_PATTERN,
+        lambda m: f"<em>{escape(m.group(1))}</em>",
+        stash,
+    )
+
+    escaped_body = escape(transformed)
+    for idx, html in enumerate(tokens):
+        escaped_body = escaped_body.replace(f"@@MDTOK{idx}@@", html)
+    return escaped_body
+
+
+def _flush_paragraph(output: list[str], paragraph_lines: list[str]) -> None:
+    if not paragraph_lines:
+        return
+    inline = _render_inline_markdown("\n".join(paragraph_lines))
+    inline_with_breaks = inline.replace("\n", "<br>")
+    output.append(f"<p>{inline_with_breaks}</p>")
+    paragraph_lines.clear()
+
+
+def render_markdown_html(raw_text: str) -> str:
+    lines = raw_text.splitlines()
+    output: list[str] = []
+    paragraph_lines: list[str] = []
+    in_list = False
+    in_code = False
+    code_lines: list[str] = []
+
+    def close_list() -> None:
+        nonlocal in_list
+        if in_list:
+            output.append("</ul>")
+            in_list = False
+
+    for line in lines:
+        if line.startswith("```"):
+            _flush_paragraph(output, paragraph_lines)
+            close_list()
+
+            if in_code:
+                code_body = escape("\n".join(code_lines))
+                output.append(f"<pre><code>{code_body}</code></pre>")
+                code_lines.clear()
+                in_code = False
+            else:
+                in_code = True
+            continue
+
+        if in_code:
+            code_lines.append(line)
+            continue
+
+        if not line.strip():
+            _flush_paragraph(output, paragraph_lines)
+            close_list()
+            continue
+
+        heading_match = HEADING_PATTERN.match(line)
+        if heading_match:
+            _flush_paragraph(output, paragraph_lines)
+            close_list()
+            level = len(heading_match.group(1))
+            heading_body = _render_inline_markdown(heading_match.group(2).strip())
+            output.append(f"<h{level}>{heading_body}</h{level}>")
+            continue
+
+        list_match = LIST_PATTERN.match(line)
+        if list_match:
+            _flush_paragraph(output, paragraph_lines)
+            if not in_list:
+                output.append("<ul>")
+                in_list = True
+            item_body = _render_inline_markdown(list_match.group(1).strip())
+            output.append(f"<li>{item_body}</li>")
+            continue
+
+        paragraph_lines.append(line)
+
+    if in_code:
+        code_body = escape("\n".join(code_lines))
+        output.append(f"<pre><code>{code_body}</code></pre>")
+
+    _flush_paragraph(output, paragraph_lines)
+    close_list()
+    return "".join(output)
 
 
 def _append_text(segments: list[Segment | ButtonSegment], text: str) -> None:
@@ -100,7 +247,7 @@ def render_assistant_html(raw_text: str, message_id: int) -> str:
                     "hx-post=\"/actions/fake\" "
                     f"hx-vals='{escape(hx_vals)}' "
                     f"hx-target=\"#action-result-{message_id}\" "
-                    "hx-swap=\"innerHTML\">"
+                    "hx-swap=\"innerHTML transition:true\">"
                     f"{escape(segment.label)}"
                     "</button>"
                 )
@@ -116,7 +263,7 @@ def render_assistant_html(raw_text: str, message_id: int) -> str:
             )
             continue
 
-        output.append(escape(segment.value).replace("\n", "<br>"))
+        output.append(render_markdown_html(segment.value))
 
     if saw_action:
         output.append(f"<div id=\"action-result-{message_id}\" class=\"action-result\"></div>")

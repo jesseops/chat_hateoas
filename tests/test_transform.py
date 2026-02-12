@@ -35,3 +35,29 @@ def test_malformed_marker_is_rendered_as_text() -> None:
 
     assert "fake-action" not in html
     assert "[[button:missing-action]]" in html
+
+
+def test_markdown_is_rendered_for_assistant_text() -> None:
+    raw = (
+        "# Heading\n\n"
+        "This has **bold**, *italic*, and `code`.\n\n"
+        "- one\n"
+        "- two\n\n"
+        "[docs](https://example.com)"
+    )
+    html = render_assistant_html(raw, message_id=3)
+
+    assert "<h1>Heading</h1>" in html
+    assert "<strong>bold</strong>" in html
+    assert "<em>italic</em>" in html
+    assert "<code>code</code>" in html
+    assert "<ul>" in html
+    assert "<a href=\"https://example.com\"" in html
+
+
+def test_markdown_escapes_unsafe_link_and_html() -> None:
+    raw = '[click](javascript:alert(1)) <img src=x onerror=alert(1)>'
+    html = render_assistant_html(raw, message_id=4)
+
+    assert "href=\"javascript:alert(1)\"" not in html
+    assert "&lt;img src=x onerror=alert(1)&gt;" in html

@@ -15,7 +15,7 @@
     class="composer"
     hx-post="{{ url_for('web.post_message', conversation_id=conversation.id) }}"
     hx-target="#messages"
-    hx-swap="beforeend"
+    hx-swap="beforeend transition:true"
   >
     <textarea
       id="composer-input"

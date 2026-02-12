@@ -6,7 +6,7 @@
       type="button"
       hx-post="{{ url_for('web.create_conversation') }}"
       hx-target="#thread-panel"
-      hx-swap="outerHTML"
+      hx-swap="outerHTML transition:true"
     >
       New
     </button>
@@ -19,7 +19,7 @@
       href="{{ url_for('web.get_conversation', conversation_id=item.id) }}"
       hx-get="{{ url_for('web.get_conversation', conversation_id=item.id) }}"
       hx-target="#thread-panel"
-      hx-swap="outerHTML"
+      hx-swap="outerHTML transition:true"
       hx-push-url="true"
     >
       {{ item.title }}

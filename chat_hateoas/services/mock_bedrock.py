@@ -5,17 +5,37 @@ from dataclasses import dataclass
 from typing import Iterator
 
 
-LOREM_SENTENCES = [
-    "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-    "Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
-    "Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
-    "Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.",
-    "Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
-    "Praesent elementum facilisis leo vel fringilla est ullamcorper eget nulla.",
-    "Amet consectetur adipiscing elit pellentesque habitant morbi tristique senectus et netus.",
-    "Vitae aliquet nec ullamcorper sit amet risus nullam eget felis.",
-    "Nibh nisl condimentum id venenatis a condimentum vitae sapien pellentesque.",
-    "Velit euismod in pellentesque massa placerat duis ultricies lacus sed.",
+LEAD_SENTENCES = [
+    "Here is a practical answer you can use immediately.",
+    "Good question. I can give you a concise plan and a concrete next step.",
+    "Below is a working response with assumptions called out clearly.",
+]
+
+CAPABILITY_POINTS = [
+    "Use **server-rendered fragments** so the backend stays the source of truth.",
+    "Keep client behavior limited to interaction state and minor UX enhancements.",
+    "Stream partial updates in small chunks so users see immediate progress.",
+    "Persist every assistant response with metadata for replay and debugging.",
+    "Render model output as Markdown-to-HTML with strict safety controls.",
+]
+
+RISK_POINTS = [
+    "Avoid rendering arbitrary model HTML directly in the browser.",
+    "Do not keep long-lived SSE nodes mounted after message completion.",
+    "Treat tool payloads as data and render them in escaped blocks.",
+    "Validate all action IDs server-side before performing any operation.",
+]
+
+FOLLOW_UP_PROMPTS = [
+    "If you want, I can adapt this into Flask route signatures next.",
+    "I can also provide a migration checklist for your existing prototype.",
+    "I can turn this into implementation tasks with acceptance criteria.",
+]
+
+REFERENCE_LINKS = [
+    ("HTMX swap behavior", "https://htmx.org/attributes/hx-swap/"),
+    ("HTMX SSE extension", "https://htmx.org/extensions/sse/"),
+    ("Flask patterns", "https://flask.palletsprojects.com/"),
 ]
 
 BUTTON_ACTIONS = [
@@ -79,20 +99,64 @@ class MockBedrockClient:
 
     def _build_response_text(self, rng: random.Random) -> str:
         band = rng.choice(["short", "medium", "long"])
-        if band == "short":
-            count = rng.randint(2, 4)
-        elif band == "medium":
-            count = rng.randint(5, 8)
-        else:
-            count = rng.randint(9, 14)
+        bullet_count = {"short": 2, "medium": 3, "long": 5}[band]
+        risk_count = {"short": 1, "medium": 2, "long": 3}[band]
 
-        text_parts = [rng.choice(LOREM_SENTENCES) for _ in range(count)]
+        topic = rng.choice(
+            [
+                "chat architecture",
+                "streaming UX",
+                "response rendering",
+                "feedback workflows",
+                "integration reliability",
+            ]
+        )
+        lead = rng.choice(LEAD_SENTENCES)
+
+        text_parts: list[str] = []
+        text_parts.append(f"### Recommendation: {topic.title()}")
+        text_parts.append(lead)
+        text_parts.append("")
+        text_parts.append("#### What to implement")
+        for point in rng.sample(CAPABILITY_POINTS, k=bullet_count):
+            text_parts.append(f"- {point}")
+
+        text_parts.append("")
+        text_parts.append("#### Why this works")
+        text_parts.append(
+            "This keeps your interface **simple**, improves reliability, and preserves a clear "
+            "request/response boundary while still supporting rich interactions."
+        )
+
+        if band in {"medium", "long"}:
+            text_parts.append("")
+            text_parts.append("#### Example payload handling")
+            text_parts.append("```json")
+            text_parts.append(
+                '{ "event": "contentBlockDelta", "delta": { "text": "partial markdown chunk" } }'
+            )
+            text_parts.append("```")
+
+        text_parts.append("")
+        text_parts.append("#### Risks to watch")
+        for point in rng.sample(RISK_POINTS, k=risk_count):
+            text_parts.append(f"- {point}")
+
+        if band == "long":
+            ref_label, ref_url = rng.choice(REFERENCE_LINKS)
+            text_parts.append("")
+            text_parts.append(f"Reference: [{ref_label}]({ref_url})")
+
+        text_parts.append("")
+        text_parts.append(rng.choice(FOLLOW_UP_PROMPTS))
 
         if rng.random() < 0.9:
             button_label, action_id = rng.choice(BUTTON_ACTIONS)
+            text_parts.append("")
             text_parts.append(f"[[button:{button_label}|{action_id}]]")
 
         if rng.random() < 0.8:
+            text_parts.append("")
             text_parts.append(rng.choice(TOOL_SNIPPETS))
 
         if rng.random() < 0.35:

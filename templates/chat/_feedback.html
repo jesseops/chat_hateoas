@@ -6,7 +6,7 @@
     hx-post="{{ url_for('web.message_feedback', message_id=message_id) }}"
     hx-vals='{"vote":"up"}'
     hx-target="#feedback-{{ message_id }}"
-    hx-swap="outerHTML"
+    hx-swap="outerHTML transition:true"
   >
     Upvote
   </button>
@@ -16,7 +16,7 @@
     hx-post="{{ url_for('web.message_feedback', message_id=message_id) }}"
     hx-vals='{"vote":"down"}'
     hx-target="#feedback-{{ message_id }}"
-    hx-swap="outerHTML"
+    hx-swap="outerHTML transition:true"
   >
     Downvote
   </button>
