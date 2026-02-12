@@ -15,6 +15,7 @@ This file defines project-specific guidance for coding agents working in this re
 - Mock LLM: Bedrock-like streaming events with Markdown output and tool/button markers.
 - Conversations support deletion and timestamp display in list/thread views.
 - Messages display per-message timestamps in the thread.
+- Thread autoscroll is sticky: it follows new content only while the user is at/near bottom.
 
 ## Repository Layout
 
@@ -25,6 +26,7 @@ This file defines project-specific guidance for coding agents working in this re
 - `chat_hateoas/services/transform.py`: safe transform and Markdown rendering.
 - `chat_hateoas/db.py`, `chat_hateoas/schema.sql`: persistence layer.
 - `templates/`: Jinja templates and HTMX fragments.
+  - `templates/chat/_icons/`: shared inline SVG icon partials.
 - `static/app.css`: styles.
 - `tests/`: pytest suite.
 
@@ -47,6 +49,7 @@ Use `uv` for all dependency and run workflows.
   - Keep button rendering whitelist-based.
 - Follow existing naming and module boundaries.
 - Use ASCII unless file already requires Unicode.
+- Prefer inline SVG icon partials from `templates/chat/_icons/` for UI iconography.
 
 ## Streaming and SSE Notes
 

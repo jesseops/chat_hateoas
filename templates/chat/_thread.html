@@ -1,9 +1,9 @@
 <section id="thread-panel" class="thread-panel" x-data="chatThread()" x-init="init()">
   {% if conversation %}
   <header class="thread-head">
-    <h2>{{ conversation.title }}</h2>
+    <h2><span class="label-with-icon">{% include "chat/_icons/message.svg" %}{{ conversation.title }}</span></h2>
     <time class="thread-time" datetime="{{ conversation.updated_at }}">
-      Updated {{ conversation.updated_at | fmt_ts }}
+      <span class="label-with-icon">{% include "chat/_icons/clock.svg" %}Updated {{ conversation.updated_at | fmt_ts }}</span>
     </time>
   </header>
 
@@ -29,7 +29,9 @@
       :disabled="pending"
     ></textarea>
     <div class="composer-actions">
-      <button type="submit" :disabled="pending">Send</button>
+      <button type="submit" :disabled="pending">
+        <span class="label-with-icon">{% include "chat/_icons/send.svg" %}Send</span>
+      </button>
     </div>
   </form>
   {% else %}

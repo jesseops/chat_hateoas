@@ -4,9 +4,16 @@
   {% if oob %}hx-swap-oob="outerHTML"{% endif %}
 >
   <div class="message-meta">
-    {{ "You" if message.role == "user" else "Assistant" }}
+    <span class="role-pill role-pill--{{ message.role }}">
+      {% if message.role == "user" %}
+        {% include "chat/_icons/user.svg" %}
+      {% else %}
+        {% include "chat/_icons/bot.svg" %}
+      {% endif %}
+      {{ "You" if message.role == "user" else "Assistant" }}
+    </span>
     <time class="message-time" datetime="{{ message.created_at }}">
-      {{ message.created_at | fmt_ts }}
+      <span class="label-with-icon">{% include "chat/_icons/clock.svg" %}{{ message.created_at | fmt_ts }}</span>
     </time>
   </div>
   <div class="message-bubble">{{ message.rendered_html | safe }}</div>

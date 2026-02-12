@@ -1,5 +1,10 @@
 <article id="message-{{ message.id }}" class="message message--assistant is-streaming">
-  <div class="message-meta">Assistant</div>
+  <div class="message-meta">
+    <span class="role-pill role-pill--assistant">
+      {% include "chat/_icons/bot.svg" %}
+      Assistant
+    </span>
+  </div>
   <div
     id="stream-target-{{ message.id }}"
     class="message-bubble stream-target"
@@ -7,6 +12,6 @@
     sse-connect="{{ url_for('stream.stream_response', assistant_message_id=message.id) }}"
     sse-swap="ui_delta,ui_done"
   >
-    <span class="thinking">Thinking...</span>
+    <span class="thinking"><span class="spinner-dot"></span>Thinking...</span>
   </div>
 </article>

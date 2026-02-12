@@ -1,6 +1,6 @@
 <aside id="conversation-list" class="conversation-list" {% if oob %}hx-swap-oob="outerHTML"{% endif %}>
   <div class="conversation-head">
-    <h2>Conversations</h2>
+    <h2><span class="label-with-icon">{% include "chat/_icons/messages.svg" %}Conversations</span></h2>
     <button
       class="new-conversation"
       type="button"
@@ -8,7 +8,7 @@
       hx-target="#thread-panel"
       hx-swap="outerHTML transition:true"
     >
-      New
+      <span class="label-with-icon">{% include "chat/_icons/plus.svg" %}New chat</span>
     </button>
   </div>
 
@@ -23,9 +23,11 @@
         hx-swap="outerHTML transition:true"
         hx-push-url="true"
       >
-        <span class="conversation-title">{{ item.title }}</span>
+        <span class="conversation-title">
+          <span class="label-with-icon">{% include "chat/_icons/message.svg" %}{{ item.title }}</span>
+        </span>
         <time class="conversation-time" datetime="{{ item.updated_at }}">
-          {{ item.updated_at | fmt_ts }}
+          <span class="label-with-icon">{% include "chat/_icons/clock.svg" %}{{ item.updated_at | fmt_ts }}</span>
         </time>
       </a>
       <button
@@ -37,7 +39,7 @@
         hx-confirm="Delete this conversation?"
         title="Delete conversation"
       >
-        Delete
+        <span class="label-with-icon">{% include "chat/_icons/trash.svg" %}Delete</span>
       </button>
     </div>
     {% endfor %}

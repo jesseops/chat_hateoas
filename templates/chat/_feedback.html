@@ -1,5 +1,5 @@
 <div id="feedback-{{ message_id }}" class="feedback">
-  <span>Helpful?</span>
+  <span class="feedback-label"><span class="label-with-icon">{% include "chat/_icons/spark.svg" %}Helpful?</span></span>
   <button
     type="button"
     class="vote {% if vote == 'up' %}active{% endif %}"
@@ -8,7 +8,7 @@
     hx-target="#feedback-{{ message_id }}"
     hx-swap="outerHTML transition:true"
   >
-    Upvote
+    <span class="label-with-icon">{% include "chat/_icons/thumb-up.svg" %}Upvote</span>
   </button>
   <button
     type="button"
@@ -18,6 +18,6 @@
     hx-target="#feedback-{{ message_id }}"
     hx-swap="outerHTML transition:true"
   >
-    Downvote
+    <span class="label-with-icon">{% include "chat/_icons/thumb-down.svg" %}Downvote</span>
   </button>
 </div>

@@ -16,21 +16,65 @@
       document.addEventListener("alpine:init", () => {
         Alpine.data("chatThread", () => ({
           pending: false,
+          shouldStickToBottom: true,
           init() {
+            const threshold = 120;
+            const getList = () => this.$refs.messages;
+            let messageObserver = null;
+
+            const isNearBottom = () => {
+              const list = getList();
+              if (!list) return true;
+              return list.scrollHeight - list.scrollTop - list.clientHeight < threshold;
+            };
+
             const scrollBottom = () => {
-              const list = this.$refs.messages;
+              const list = getList();
               if (!list) return;
-              const nearBottom = list.scrollHeight - list.scrollTop - list.clientHeight < 120;
-              if (nearBottom || list.dataset.forceScroll === "1") {
+              if (this.shouldStickToBottom || list.dataset.forceScroll === "1") {
                 list.scrollTop = list.scrollHeight;
                 list.dataset.forceScroll = "0";
               }
             };
 
-            this.$nextTick(() => {
-              if (this.$refs.messages) {
-                this.$refs.messages.dataset.forceScroll = "1";
+            const bindScrollTracking = () => {
+              const list = getList();
+              if (!list || list.dataset.scrollBound === "1") return;
+              list.dataset.scrollBound = "1";
+              list.addEventListener("scroll", () => {
+                this.shouldStickToBottom = isNearBottom();
+              });
+            };
+
+            const bindMutationObserver = () => {
+              const list = getList();
+              if (!list) return;
+
+              if (messageObserver) {
+                messageObserver.disconnect();
               }
+
+              messageObserver = new MutationObserver(() => {
+                if (this.shouldStickToBottom) {
+                  list.dataset.forceScroll = "1";
+                  this.$nextTick(scrollBottom);
+                }
+              });
+
+              messageObserver.observe(list, {
+                childList: true,
+                subtree: true,
+                characterData: true,
+              });
+            };
+
+            this.$nextTick(() => {
+              const list = getList();
+              if (list) {
+                list.dataset.forceScroll = "1";
+              }
+              bindScrollTracking();
+              bindMutationObserver();
               scrollBottom();
             });
 
@@ -39,9 +83,24 @@
               if (!target) return;
 
               if (target.id === "messages" || String(target.id || "").startsWith("stream-target-")) {
-                if (this.$refs.messages) {
-                  this.$refs.messages.dataset.forceScroll = "1";
+                const list = getList();
+                if (list && this.shouldStickToBottom) {
+                  list.dataset.forceScroll = "1";
                 }
+                bindScrollTracking();
+                bindMutationObserver();
+                this.$nextTick(scrollBottom);
+              }
+            });
+
+            document.body.addEventListener("htmx:sseMessage", (event) => {
+              const elt = event.detail && event.detail.elt;
+              if (!elt) return;
+              if (!String(elt.id || "").startsWith("stream-target-")) return;
+
+              const list = getList();
+              if (list && this.shouldStickToBottom) {
+                list.dataset.forceScroll = "1";
                 this.$nextTick(scrollBottom);
               }
             });
@@ -49,6 +108,7 @@
             document.body.addEventListener("htmx:beforeRequest", (event) => {
               if (event.target && event.target.id === "composer-form") {
                 this.pending = true;
+                this.shouldStickToBottom = true;
               }
             });
 
