@@ -19,6 +19,7 @@
           shouldStickToBottom: true,
           debugPanelEnabled: false,
           messageObserver: null,
+          scrollHandler: null,
           init() {
             const threshold = 120;
             const getList = () => this.$refs.messages;
@@ -54,9 +55,10 @@
               const list = getList();
               if (!list || list.dataset.scrollBound === "1") return;
               list.dataset.scrollBound = "1";
-              list.addEventListener("scroll", () => {
+              this.scrollHandler = () => {
                 this.shouldStickToBottom = isNearBottom();
-              });
+              };
+              list.addEventListener("scroll", this.scrollHandler);
             };
 
             const bindMutationObserver = () => {
@@ -84,6 +86,7 @@
             this.handleAfterSwap = (event) => {
               const target = event.detail && event.detail.target;
               if (!target) return;
+              if (target.closest("#thread-panel") !== this.$el) return;
 
               if (target.id === "messages" || String(target.id || "").startsWith("stream-target-")) {
                 const list = getList();
@@ -100,6 +103,7 @@
               const elt = event.detail && event.detail.elt;
               if (!elt) return;
               if (!String(elt.id || "").startsWith("stream-target-")) return;
+              if (elt.closest("#thread-panel") !== this.$el) return;
 
               const list = getList();
               if (list && this.shouldStickToBottom) {
@@ -110,6 +114,7 @@
 
             this.handleBeforeRequest = (event) => {
               if (event.target && event.target.id === "composer-form") {
+                if (event.target.closest("#thread-panel") !== this.$el) return;
                 this.pending = true;
                 this.shouldStickToBottom = true;
               }
@@ -117,8 +122,9 @@
 
             this.handleAfterRequest = (event) => {
               if (event.target && event.target.id === "composer-form") {
+                if (event.target.closest("#thread-panel") !== this.$el) return;
                 this.pending = false;
-                const input = document.getElementById("composer-input");
+                const input = this.$el.querySelector("#composer-input");
                 if (input) input.value = "";
               }
             };
@@ -132,31 +138,18 @@
               bindMutationObserver();
               scrollBottom();
             });
-
-            window.__chatThreadActive = this;
-            if (!window.__chatThreadHandlersBound) {
-              window.__chatThreadHandlersBound = true;
-
-              document.body.addEventListener("htmx:afterSwap", (event) => {
-                const active = window.__chatThreadActive;
-                if (active && active.handleAfterSwap) active.handleAfterSwap(event);
-              });
-
-              document.body.addEventListener("htmx:sseMessage", (event) => {
-                const active = window.__chatThreadActive;
-                if (active && active.handleSSEMessage) active.handleSSEMessage(event);
-              });
-
-              document.body.addEventListener("htmx:beforeRequest", (event) => {
-                const active = window.__chatThreadActive;
-                if (active && active.handleBeforeRequest) active.handleBeforeRequest(event);
-              });
-
-              document.body.addEventListener("htmx:afterRequest", (event) => {
-                const active = window.__chatThreadActive;
-                if (active && active.handleAfterRequest) active.handleAfterRequest(event);
-              });
+          },
+          destroy() {
+            if (this.messageObserver) {
+              this.messageObserver.disconnect();
+              this.messageObserver = null;
             }
+
+            const list = this.$refs.messages;
+            if (list && this.scrollHandler) {
+              list.removeEventListener("scroll", this.scrollHandler);
+            }
+            this.scrollHandler = null;
           },
         }));
       });

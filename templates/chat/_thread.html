@@ -1,4 +1,14 @@
-<section id="thread-panel" class="thread-panel" x-data="chatThread()" x-init="init()">
+<section
+  id="thread-panel"
+  class="thread-panel"
+  x-data="chatThread()"
+  x-init="init()"
+  x-on:alpine:destroy="destroy()"
+  x-on:htmx:after-swap.window="handleAfterSwap($event)"
+  x-on:htmx:sse-message.window="handleSSEMessage($event)"
+  x-on:htmx:before-request.window="handleBeforeRequest($event)"
+  x-on:htmx:after-request.window="handleAfterRequest($event)"
+>
   {% if conversation %}
   <header class="thread-head">
     <h2><span class="label-with-icon">{% include "chat/_icons/message.svg" %}{{ conversation.title }}</span></h2>
